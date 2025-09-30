@@ -2,16 +2,16 @@
 <html>
 <head>
     <title>Walkaroo HR Report</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="header">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Walkaroo Logo">
+        <img src="/static/logo.png" alt="Walkaroo Logo">
         <h2>TRACK YOUR ATTENDANCE</h2>
     </div>
     <form method="POST">
         <label for="empId">Employee ID:</label>
-        <input type="text" name="empId" required>
+        <input type="text" name="empId" placeholder="Enter your Employee ID" required>
 
         <label for="reportType">Select Report Type:</label>
         <select name="reportType">
