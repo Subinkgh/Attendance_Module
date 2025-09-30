@@ -2,9 +2,9 @@
 body {
     font-family: Arial, sans-serif;
     background-color: #fff;
-    color: #b30000;
+    color: #333;
     padding: 40px;
-    max-width: 600px;
+    max-width: 1000px;
     margin: auto;
 }
 .header {
@@ -54,4 +54,34 @@ button {
 }
 button:hover {
     background-color: #990000;
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+}
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+}
+th {
+    background-color: #b30000;
+    color: white;
+}
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+.muster-PP { background-color: #d4edda; }
+.muster-PA, .muster-AP { background-color: #add8e6; }
+.muster-AA { background-color: #f8d7da; }
+.muster-OO { background-color: #e0e0e0; }
+.muster-HH { background-color: #fff3cd; }
+.legend-box {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+.legend-item {
+    margin-bottom: 5px;
 }
