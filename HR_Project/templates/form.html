@@ -1,13 +1,12 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>Walkaroo HR Report</title>
-    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="header">
-        <img src="/static/logo.png" alt="Walkaroo Logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Walkaroo Logo">
         <h2>TRACK YOUR ATTENDANCE</h2>
     </div>
     <form method="POST">
