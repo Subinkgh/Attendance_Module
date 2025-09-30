@@ -1,9 +1,10 @@
+
 body {
     font-family: Arial, sans-serif;
     background-color: #fff;
-    color: #333;
+    color: #b30000;
     padding: 40px;
-    max-width: 1000px;
+    max-width: 600px;
     margin: auto;
 }
 .header {
@@ -19,33 +20,38 @@ h2 {
     margin: 0;
     color: #b30000;
 }
-table {
-    border-collapse: collapse;
+form {
+    background-color: #f9f9f9;
+    border: 2px solid #b30000;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(179, 0, 0, 0.1);
+}
+label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+}
+input[type="text"],
+input[type="month"],
+select {
     width: 100%;
-    margin-top: 20px;
-}
-th, td {
+    padding: 10px;
+    margin-top: 5px;
     border: 1px solid #ccc;
-    padding: 8px;
-    text-align: center;
+    border-radius: 4px;
 }
-th {
+button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
     background-color: #b30000;
     color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
 }
-tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-.muster-PP { background-color: #d4edda; }
-.muster-PA, .muster-AP { background-color: #cce5ff; }
-.muster-AA { background-color: #f8d7da; }
-.muster-OO { background-color: #e2e3e5; }
-.muster-HH { background-color: #fff3cd; }
-.legend-box {
-    margin-top: 20px;
-    padding: 10px;
-    border: 1px solid #ccc;
-}
-.legend-item {
-    margin-bottom: 5px;
+button:hover {
+    background-color: #990000;
 }
