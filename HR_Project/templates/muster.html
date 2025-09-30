@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Muster Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h2>Muster Report for {{ emp_id }} – {{ month }}</h2>
+    <table>
+        <tr><th>Date</th><th>Muster Mark</th></tr>
+        {% for row in data %}
+        <tr>
+            <td>{{ row['Date'].strftime('%d-%b-%Y') if row['Date'] else '-' }}</td>
+            <td class="muster-{{ row['MusterMark'] }}">{{ row['MusterMark'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

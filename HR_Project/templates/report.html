@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Punch Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h2>Punch Report for {{ emp_name }} ({{ emp_id }}) – {{ month }}</h2>
+    <table>
+        <tr>
+            <th>Emp Code</th><th>Name</th><th>Date</th><th>Day</th><th>In Time</th><th>Out Time</th><th>Muster Mark</th><th>Additional</th><th>Remark</th>
+        </tr>
+        {% for row in data %}
+        <tr>
+            <td>{{ row['Card No'] }}</td>
+            <td>{{ row['Employee Name'].strip() }}</td>
+            <td>{{ row['Date'].strftime('%d-%b-%Y') if row['Date'] else '-' }}</td>
+            <td>{{ row['Day'] }}</td>
+            <td>{{ row['In Punch'] if row['In Punch'] else '-' }}</td>
+            <td>{{ row['Out Punch'] if row['Out Punch'] else '-' }}</td>
+            <td class="muster-{{ row['MusterMark'] }}">{{ row['MusterMark'] }}</td>
+            <td>{{ row['Additional'] if row['Additional'] else '-' }}</td>
+            <td>{{ row['Remark'] if row['Remark'] else '-' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="legend-box">
+        <h3>Muster Mark Legend</h3>
+        <div class="legend-item"><span class="muster-PP">PP</span> - Present</div>
+        <div class="legend-item"><span class="muster-PA">PA</span> / <span class="muster-AP">AP</span> - Half Day Present</div>
+        <div class="legend-item"><span class="muster-AA">AA</span> - Absent</div>
+        <div class="legend-item"><span class="muster-OO">OO</span> - Week Off</div>
+        <div class="legend-item"><span class="muster-HH">HH</span> - Holiday</div>
+    </div>
+
+    <h3>Summary</h3>
+    <table>
+        <tr><th>Total Days</th><td>{{ summary['Total Days'] }}</td></tr>
+        <tr><th>Present Days</th><td>{{ summary['Present Days'] }}</td></tr>
+        <tr><th>Absent Days</th><td>{{ summary['Absent Days'] }}</td></tr>
+        <tr><th>Week Offs</th><td>{{ summary['OO'] }}</td></tr>
+        <tr><th>Holidays</th><td>{{ summary['HH'] }}</td></tr>
+        <tr><th>Additional Total</th><td>{{ summary['Additional'] }}</td></tr>
+    </table>
+</body>
+</html>

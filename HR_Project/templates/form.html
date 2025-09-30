@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Walkaroo HR Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Walkaroo Logo">
+        <h2>TRACK YOUR ATTENDANCE</h2>
+    </div>
+    <form method="POST">
+        <label for="empId">Employee ID:</label>
+        <input type="text" name="empId" required>
+
+        <label for="reportType">Select Report Type:</label>
+        <select name="reportType">
+            <option value="Punch Report">Punch Report</option>
+            <option value="Muster Report">Muster Report</option>
+        </select>
+
+        <label for="month">Select Month:</label>
+        <input type="month" name="month" required>
+
+        <button type="submit">Get Report</button>
+    </form>
+</body>
+</html>
