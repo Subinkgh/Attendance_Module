@@ -35,7 +35,7 @@
         var formData = new FormData();
         formData.append('excelFile', file);
 
-        fetch('/upload_excel', { // Change this to your backend upload endpoint
+        fetch('/upload', { // Change this to your backend upload endpoint
           method: 'POST',
           body: formData
         })
@@ -56,4 +56,5 @@
       };
     </script>
 </body>
+
 </html>
