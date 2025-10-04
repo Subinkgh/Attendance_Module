@@ -43,11 +43,10 @@ def index():
             return f"Error loading report: {e}"
     return render_template('form.html')
 
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+
 import pandas as pd
 import os
 
-app = Flask(__name__)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
