@@ -47,6 +47,8 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 import pandas as pd
 import os
 
+app = Flask(__name__)
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
@@ -61,9 +63,10 @@ def upload():
             temp_path = os.path.join('data', 'uploaded_temp.xlsx')
             file.save(temp_path)
             try:
-                # -- Your update logic here --
+                # Example: read uploaded file, update attendance.xlsx, etc.
                 # df_uploaded = pd.read_excel(temp_path, engine='openpyxl')
-                # ... update attendance.xlsx ...
+                # ... your update logic ...
+                
                 os.remove(temp_path)
                 return jsonify(success=True, message="File uploaded and processed!")
             except Exception as e:
