@@ -43,30 +43,30 @@ def index():
             return f"Error loading report: {e}"
     return render_template('form.html')
 
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+import pandas as pd
+import os
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
-        # Check for file
+        # Ensure data folder exists
+        os.makedirs('data', exist_ok=True)
         if 'excelFile' not in request.files:
             return jsonify(success=False, message="No file part")
         file = request.files['excelFile']
         if file.filename == '':
             return jsonify(success=False, message="No selected file")
         if file:
-            # Save to data folder as temp file
             temp_path = os.path.join('data', 'uploaded_temp.xlsx')
             file.save(temp_path)
             try:
-                # --- Perform your update logic here ---
-                # Example: read uploaded file, update attendance.xlsx, etc.
+                # -- Your update logic here --
                 # df_uploaded = pd.read_excel(temp_path, engine='openpyxl')
-                # ... your update logic ...
-                
-                # After update, remove temp file
+                # ... update attendance.xlsx ...
                 os.remove(temp_path)
                 return jsonify(success=True, message="File uploaded and processed!")
             except Exception as e:
-                # Remove temp file in case of error too
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
                 return jsonify(success=False, message=f"Error processing file: {e}")
