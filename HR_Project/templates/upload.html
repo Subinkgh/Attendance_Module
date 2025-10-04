@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Excel Upload - Attendance Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      body { font-family: Arial, sans-serif; }
+      .container { max-width: 400px; margin: 60px auto; background: #f8f8f8; padding: 24px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
+      h2 { text-align: center; }
+      .msg { margin-top: 20px; text-align: center; color: green; }
+      .error { margin-top: 20px; text-align: center; color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Admin: Upload Attendance Excel</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <label for="excelFile">Select Excel file (.xlsx, .xls):</label><br>
+            <input type="file" id="excelFile" name="excelFile" accept=".xlsx,.xls" required><br><br>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="result" class="msg"></div>
+        <div id="error" class="error"></div>
+    </div>
+    <script>
+      document.getElementById('uploadForm').onsubmit = function(e) {
+        e.preventDefault();
+        var fileInput = document.getElementById('excelFile');
+        if (!fileInput.files.length) {
+          document.getElementById('error').textContent = "Please select a file!";
+          document.getElementById('result').textContent = "";
+          return;
+        }
+        var file = fileInput.files[0];
+        var formData = new FormData();
+        formData.append('excelFile', file);
+
+        fetch('/upload_excel', { // Change this to your backend upload endpoint
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('result').textContent = "Upload successful! " + (data.message || "");
+            document.getElementById('error').textContent = "";
+          } else {
+            document.getElementById('error').textContent = data.message || "Upload failed!";
+            document.getElementById('result').textContent = "";
+          }
+        })
+        .catch(error => {
+          document.getElementById('error').textContent = "Upload failed!";
+          document.getElementById('result').textContent = "";
+        });
+      };
+    </script>
+</body>
+</html>

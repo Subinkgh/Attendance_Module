@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Muster Report for {{ emp_id }} – {{ month }}</h2>
+    <h2>Muster Report for {{ emp_name }} {{ emp_id }} – {{ month }}</h2>
     <table>
         <tr><th>Date</th><th>Muster Mark</th></tr>
         {% for row in data %}

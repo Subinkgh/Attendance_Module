@@ -1,12 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Your Attendance Report</title>
+    <title>Walkaroo HR Report</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      .top-right {
+        position: fixed;
+        top: 20px;
+        right: 30px;
+        z-index: 1000;
+      }
+      .modal {
+        display: none; position: fixed; z-index: 2000; left: 0; top: 0;
+        width: 100%; height: 100%; overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+      }
+      .modal-content {
+        background-color: #fff; margin: 10% auto; padding: 20px;
+        border: 1px solid #888; width: 300px; border-radius: 8px;
+      }
+      .error { color: red; }
+    </style>
 </head>
 <body>
+    <!-- Admin Login Button & Modal -->
+    <div class="top-right">
+      <button onclick="document.getElementById('loginModal').style.display = 'block';">Admin Login</button>
+    </div>
+    <div id="loginModal" class="modal">
+      <div class="modal-content">
+        <h3>Admin Login</h3>
+        <form id="loginForm" onsubmit="return handleAdminLogin(event)">
+          <label>Username:</label><br>
+          <input type="text" id="adminUsername" required><br><br>
+          <label>Password:</label><br>
+          <input type="password" id="adminPassword" required><br><br>
+          <button type="submit">Login</button>
+          <button type="button" onclick="document.getElementById('loginModal').style.display = 'none';">Cancel</button>
+        </form>
+        <div id="loginError" class="error"></div>
+      </div>
+    </div>
+    <script>
+      function handleAdminLogin(event) {
+        event.preventDefault();
+        var username = document.getElementById('adminUsername').value;
+        var password = document.getElementById('adminPassword').value;
+        var errorDiv = document.getElementById('loginError');
+        if (username === 'Walk_Admin' && password === 'AttendanceTracker@123') {
+          // Redirect to Upload.html for excel upload
+          window.location.href = "/upload";
+        } else {
+          errorDiv.textContent = 'Invalid credentials!';
+        }
+        return false;
+      }
+      // Hide modal on outside click
+      window.onclick = function(event) {
+        var modal = document.getElementById('loginModal');
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      }
+    </script>
+    <!-- End Admin Login code -->
+
     <div class="header">
-        <img src="{{ url_for('static', filename='Logo.png') }}" alt="Logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Walkaroo Logo">
         <h2>TRACK YOUR ATTENDANCE</h2>
     </div>
     <form method="POST">
