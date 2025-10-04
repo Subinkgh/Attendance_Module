@@ -43,7 +43,7 @@ def index():
             return f"Error loading report: {e}"
     return render_template('form.html')
 
-
+from flask import jsonify
 import pandas as pd
 import os
 
