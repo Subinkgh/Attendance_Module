@@ -18,7 +18,8 @@
             <td>{{ row['Day'] }}</td>
             <td>{{ row['In Punch'] if row['In Punch'] else '-' }}</td>
             <td>{{ row['Out Punch'] if row['Out Punch'] else '-' }}</td>
-            <td class="muster-{{ row['MusterMark'] }}">{{ row['MusterMark'] }}</td>
+            {# replace '/', '.', and spaces so classes are valid (1/2EL -> 1-2EL) #}
+            <td class="muster-{{ (row['MusterMark'] or '')|replace('/','-')|replace('.','-')|replace(' ','') }}">{{ row['MusterMark'] }}</td>
             <td>{{ row['Additional'] if row['Additional'] else '-' }}</td>
             <td>{{ row['Remark'] if row['Remark'] else '-' }}</td>
         </tr>
@@ -29,18 +30,23 @@
         <h3>Muster Mark Legend</h3>
         <div class="legend-item"><span class="muster-PP">PP</span> - Present</div>
         <div class="legend-item"><span class="muster-PA">PA</span> / <span class="muster-AP">AP</span> - Half Day Present</div>
+        <div class="legend-item"><span class="muster-EL">EL</span> - Earned Leave (1.0)</div>
+        <div class="legend-item"><span class="muster-1-2EL">1/2EL</span> - Earned Leave (0.5)</div>
         <div class="legend-item"><span class="muster-AA">AA</span> - Absent</div>
         <div class="legend-item"><span class="muster-OO">OO</span> - Week Off</div>
         <div class="legend-item"><span class="muster-HH">HH</span> - Holiday</div>
+
     </div>
 
     <h3>Summary</h3>
     <table>
         <tr><th>Total Days</th><td>{{ summary['Total Days'] }}</td></tr>
         <tr><th>Present Days</th><td>{{ summary['Present Days'] }}</td></tr>
+        <tr><th>Earned Leave (EL)</th><td>{{ summary['EL'] }}</td></tr>
         <tr><th>Absent Days</th><td>{{ summary['Absent Days'] }}</td></tr>
         <tr><th>Week Offs</th><td>{{ summary['OO'] }}</td></tr>
         <tr><th>Holidays</th><td>{{ summary['HH'] }}</td></tr>
+       
         <tr><th>Additional Total</th><td>{{ summary['Additional'] }}</td></tr>
     </table>
 </body>
