@@ -1,195 +1,151 @@
-from flask import Flask, render_template, request, redirect, url_for
+
+from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import os
-import logging
+from openpyxl import load_workbook
+from datetime import datetime
 
 app = Flask(__name__)
-app.logger.setLevel(logging.INFO)
 
-
-def find_column(df, candidates, substring_fallback=None):
-    # try exact matches first (case-insensitive, stripped)
-    cols = {c.strip().lower(): c for c in df.columns}
-    for cand in candidates:
-        if cand.strip().lower() in cols:
-            return cols[cand.strip().lower()]
-    # fallback: find first column that contains any candidate substring
-    for cand in candidates:
-        lower_cand = cand.strip().lower()
-        for k, orig in cols.items():
-            if lower_cand in k:
-                return orig
-    # optional substring search across all columns
-    if substring_fallback:
-        for k, orig in cols.items():
-            if substring_fallback.lower() in k:
-                return orig
-    return None
-
-
-def normalize_card_value(val):
-    # convert numeric floats like 12345.0 to '12345', strip whitespace
-    try:
-        s = str(val).strip()
-        # remove trailing .0 that often comes from Excel floats
-        if s.endswith('.0'):
-            s = s[:-2]
-        return s
-    except Exception:
-        return ''
-
+# Utility: Normalize column names consistently
+def normalize_columns(cols):
+    return [str(col).strip().replace(" ", "").replace(".", "").lower() for col in cols]
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        emp_id = request.form.get('empId', '').strip()
-        report_type = request.form.get('reportType', '')
-        month_input = request.form.get('month', '').strip()
-
+        emp_id = request.form.get('empId')
+        report_type = request.form.get('reportType')
+        month = request.form.get('month')
         try:
             df = pd.read_excel('data/attendance.xlsx', sheet_name='PunchReport', engine='openpyxl')
-            # normalize column headers
             df.columns = [col.strip() for col in df.columns]
-            app.logger.info("Columns read from Excel: %s", df.columns.tolist())
 
-            # find date column and card number column using common variants
-            date_col = find_column(df, ['Date', 'Punch Date', 'PunchDate', 'Attendance Date', 'AttendanceDate'], substring_fallback='date')
-            card_col = find_column(df, ['Card No', 'CardNumber', 'Card No.', 'Card No', 'Card #', 'Card'], substring_fallback='card')
+            # Validate required columns
+            required_cols = ['Card No', 'Date', 'MusterMark']
+            for col in required_cols:
+                if col not in df.columns:
+                    return f"Missing required column: {col}"
 
-            if date_col is None:
-                return "Could not find a date column in the Excel. Columns available: " + ', '.join(df.columns)
+            # Parse dates safely
+            df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+            df = df.dropna(subset=['Date'])
+            df['Month'] = df['Date'].dt.strftime('%Y-%m')
 
-            if card_col is None:
-                return "Could not find a Card No column in the Excel. Columns available: " + ', '.join(df.columns)
-
-            # Convert date column
-            df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
-            if df[date_col].isna().all():
-                # All dates failed parse, give diagnostic
-                sample_vals = df[date_col].astype(str).head(10).tolist()
-                return f"Date column '{date_col}' could not be parsed as dates. Sample values: {sample_vals}"
-
-            # Normalize card column to string forms
-            df[card_col] = df[card_col].apply(normalize_card_value)
-
-            # Build Month column in YYYY-MM format
-            df['Month'] = df[date_col].dt.strftime('%Y-%m')
-
-            # Try to parse the month input from the form into YYYY-MM
-            month_value = None
-            if month_input:
-                # If user sent YYYY-MM already, accept it
-                if pd.Series([month_input]).str.match(r'^\d{4}-\d{2}$').any():
-                    month_value = month_input
-                else:
-                    # try parsing as a date-like string and then format
-                    try:
-                        parsed = pd.to_datetime(month_input, errors='coerce')
-                        if pd.notna(parsed):
-                            month_value = parsed.strftime('%Y-%m')
-                    except Exception:
-                        month_value = None
-
-            # If parsing failed and the form had something, fallback to the raw string
-            if not month_value and month_input:
-                month_value = month_input
-
-            app.logger.info("Filtering for card '%s' (column '%s') and month '%s'", emp_id, card_col, month_value)
-
-            # Filter safely: compare normalized strings
-            if emp_id:
-                emp_id_norm = emp_id
-            else:
-                emp_id_norm = ''
-
-            # Filter rows
-            if month_value:
-                filtered = df[(df[card_col].astype(str).str.strip() == emp_id_norm) & (df['Month'] == month_value)]
-            else:
-                filtered = df[df[card_col].astype(str).str.strip() == emp_id_norm]
-
+            filtered = df[(df['Card No'].astype(str) == emp_id) & (df['Month'] == month)]
             if filtered.empty:
-                # Provide diagnostics to help find mismatch
-                rows_with_card = df[df[card_col].astype(str).str.strip() == emp_id_norm]
-                rows_with_month = df[df['Month'] == month_value] if month_value else pd.DataFrame()
-                msg_lines = []
-                msg_lines.append("No data found for the given Employee ID and Month.")
-                msg_lines.append(f"Employee ID searched: '{emp_id_norm}'")
-                msg_lines.append(f"Month searched: '{month_value}'")
-                msg_lines.append(f"Total rows in sheet: {len(df)}")
-                msg_lines.append(f"Rows matching Employee ID only: {len(rows_with_card)}")
-                if len(rows_with_card) > 0:
-                    msg_lines.append("Sample rows for matching Employee ID (first 5):")
-                    msg_lines.append(rows_with_card.head(5).to_string(index=False))
-                msg_lines.append(f"Rows matching Month only: {len(rows_with_month)}")
-                if len(rows_with_month) > 0:
-                    msg_lines.append("Sample rows for matching Month (first 5):")
-                    msg_lines.append(rows_with_month.head(5).to_string(index=False))
-                msg_lines.append("Available columns: " + ', '.join(df.columns))
-                # Also show sample of card column values to see formatting
-                sample_cards = df[card_col].dropna().astype(str).head(20).tolist()
-                msg_lines.append(f"Sample values from card column '{card_col}': {sample_cards}")
-                return "<pre>" + "\n\n".join(msg_lines) + "</pre>"
+                return "No data found for the given Employee ID and Month."
 
-            # At this point we have filtered rows
-            if report_type == 'Punch Report':
-                summary = {
-                    'Total Days': len(filtered),
-                    'PP': (filtered.get('MusterMark') == 'PP').sum() if 'MusterMark' in filtered.columns else 0,
-                    'PA': (filtered.get('MusterMark') == 'PA').sum() if 'MusterMark' in filtered.columns else 0,
-                    'AP': (filtered.get('MusterMark') == 'AP').sum() if 'MusterMark' in filtered.columns else 0,
-                    'AA': (filtered.get('MusterMark') == 'AA').sum() if 'MusterMark' in filtered.columns else 0,
-                    'OO': (filtered.get('MusterMark') == 'OO').sum() if 'MusterMark' in filtered.columns else 0,
-                    'HH': (filtered.get('MusterMark') == 'HH').sum() if 'MusterMark' in filtered.columns else 0,
-                    'Additional': filtered['Additional'].sum() if 'Additional' in filtered.columns else 0
-                }
-                present_days = summary['PP'] + 0.5 * (summary['PA'] + summary['AP'])
-                absent_days = summary['AA'] + 0.5 * (summary['PA'] + summary['AP'])
-                summary['Present Days'] = present_days
-                summary['Absent Days'] = absent_days
-                employee_name = filtered.iloc[0]['Employee Name'].strip() if 'Employee Name' in filtered.columns else ''
-                return render_template('report.html', data=filtered.to_dict(orient='records'), emp_id=emp_id, emp_name=employee_name, month=month_value, summary=summary)
-            else:
-                return render_template('muster.html', data=filtered.to_dict(orient='records'), emp_id=emp_id, month=month_value)
+            summary = {
+                'Total Days': len(filtered),
+                'PP': (filtered['MusterMark'] == 'PP').sum(),
+                'PA': (filtered['MusterMark'] == 'PA').sum(),
+                'AP': (filtered['MusterMark'] == 'AP').sum(),
+                'AA': (filtered['MusterMark'] == 'AA').sum(),
+                'OO': (filtered['MusterMark'] == 'OO').sum(),
+                'HH': (filtered['MusterMark'] == 'HH').sum(),
+                'Additional': filtered.get('Additional', pd.Series([0]*len(filtered))).sum()
+            }
+            summary['Present Days'] = summary['PP'] + 0.5 * (summary['PA'] + summary['AP'])
+            summary['Absent Days'] = summary['AA'] + 0.5 * (summary['PA'] + summary['AP'])
+
+            employee_name = filtered.iloc[0].get('Employee Name', '')
+
+            template = 'report.html' if report_type == 'Punch Report' else 'muster.html'
+            return render_template(template, data=filtered.to_dict(orient='records'), emp_id=emp_id, emp_name=employee_name, month=month, summary=summary)
         except Exception as e:
-            app.logger.exception("Error loading report")
-            return f"Error loading report: {e}"
+            return "Error loading report. Please check the file format and data integrity."
     return render_template('form.html')
-
-
-from flask import jsonify
-import pandas as pd
-import os
-
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
-        # Ensure data folder exists
         os.makedirs('data', exist_ok=True)
         if 'excelFile' not in request.files:
             return jsonify(success=False, message="No file part")
         file = request.files['excelFile']
-        if file.filename == '':
-            return jsonify(success=False, message="No selected file")
-        if file:
-            temp_path = os.path.join('data', 'uploaded_temp.xlsx')
-            file.save(temp_path)
-            try:
-                # Example: read uploaded file, update attendance.xlsx, etc.
-                # df_uploaded = pd.read_excel(temp_path, engine='openpyxl')
-                # ... your update logic ...
+        if file.filename == '' or not file.filename.endswith(('.xlsx', '.xls')):
+            return jsonify(success=False, message="Invalid file format. Only .xlsx and .xls allowed.")
 
+        temp_path = os.path.join('data', 'uploaded_temp.xlsx')
+        file.save(temp_path)
+
+        try:
+            wb = load_workbook(temp_path, data_only=True)
+            punch_sheet = next((wb[s] for s in wb.sheetnames if s.startswith("Punch Report")), None)
+            if not punch_sheet:
                 os.remove(temp_path)
-                return jsonify(success=True, message="File uploaded and processed!")
-            except Exception as e:
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
-                return jsonify(success=False, message=f"Error processing file: {e}")
+                return jsonify(success=False, message="No valid Punch Report sheet found.")
+
+            # Dynamic header detection
+            headers = [str(cell.value).strip() if cell.value else "" for cell in punch_sheet[4]]
+            sub_headers = [str(cell.value).strip() if cell.value else "" for cell in punch_sheet[5]]
+
+            data_rows = []
+            for row in punch_sheet.iter_rows(min_row=7, values_only=True):
+                if all(cell is None for cell in row):
+                    continue
+                row_dict = dict(zip(headers, row))
+                row_dict["Punch-Timings First"] = sub_headers[0]
+                row_dict["Punch-Timings Last"] = sub_headers[1]
+                normalized_row = {str(k).strip().replace(" ", "").replace(".", "").lower(): v for k, v in row_dict.items()}
+                data_rows.append(normalized_row)
+
+            if not data_rows:
+                os.remove(temp_path)
+                return jsonify(success=False, message="No valid punch data found.")
+
+            punch_dates = [pd.to_datetime(r.get("punchdate"), errors='coerce') for r in data_rows if r.get("punchdate")]
+            punch_dates = [d for d in punch_dates if pd.notnull(d)]
+            if not punch_dates:
+                os.remove(temp_path)
+                return jsonify(success=False, message="No valid PunchDate found.")
+
+            month_year = punch_dates[0].strftime("%Y-%m")
+            csv_file_path = f"data/{month_year}.csv"
+
+            # Prepare DataFrame
+            expected_cols = normalize_columns(["SrNo.", "Card No", "ECode", "Employee Name", "PunchDate", "Day", "Punch-Timings First", "Punch-Timings Last", "Shift", "MusterMark", "WorkTime", "ActualHours", "Late", "Early", "OverTime", "Remarks", "Additional"])
+            if os.path.exists(csv_file_path):
+                df_existing = pd.read_csv(csv_file_path)
+                df_existing.columns = normalize_columns(df_existing.columns)
+            else:
+                df_existing = pd.DataFrame(columns=expected_cols)
+
+            new_rows = []
+            for row in data_rows:
+                card_no = row.get("cardno")
+                punch_date = row.get("punchdate")
+                if not card_no or pd.isnull(punch_date):
+                    continue
+
+                key_match = (df_existing["cardno"] == card_no) & (df_existing["punchdate"] == punch_date)
+                try:
+                    overtime = float(row.get("overtime", 0)) if row.get("overtime") not in [None, "", " "] else 0
+                except (ValueError, TypeError):
+                    overtime = 0
+                additional = round(overtime, 2)  # FIX: Removed *24 inflation
+
+                new_row = {col: row.get(col, "") for col in expected_cols}
+                new_row["additional"] = additional
+
+                if not df_existing[key_match].empty:
+                    for k, v in new_row.items():
+                        df_existing.loc[key_match, k] = v
+                else:
+                    new_rows.append(new_row)
+
+            if new_rows:
+                df_existing = pd.concat([df_existing, pd.DataFrame(new_rows)], ignore_index=True)
+
+            df_existing.to_csv(csv_file_path, index=False)
+            os.remove(temp_path)
+            return jsonify(success=True, message=f"Punch data saved to {month_year}.csv")
+        except Exception:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            return jsonify(success=False, message="Error processing file. Please check the data format.")
     return render_template('upload.html')
 
-
 if __name__ == '__main__':
-    # For development only; Render/gunicorn should use a Procfile in production
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(debug=True)
