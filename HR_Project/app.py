@@ -44,11 +44,13 @@ def index():
                 'AA': (filtered['MusterMark'] == 'AA').sum(),
                 'OO': (filtered['MusterMark'] == 'OO').sum(),
                 'HH': (filtered['MusterMark'] == 'HH').sum(),
+                'EL': (filtered['MusterMark'] == 'EL').sum(),
+                'Half_EL': (filtered['MusterMark'] == '1/2EL').sum(),
                 'Additional': filtered.get('Additional', pd.Series([0]*len(filtered))).sum()
             }
             summary['Present Days'] = summary['PP'] + 0.5 * (summary['PA'] + summary['AP'])
             summary['Absent Days'] = summary['AA'] + 0.5 * (summary['PA'] + summary['AP'])
-
+            summary['Earned Leave (EL)'] = summary['EL'] + 0.5 * summary['Half_EL']
             employee_name = filtered.iloc[0].get('Employee Name', '')
 
             template = 'report.html' if report_type == 'Punch Report' else 'muster.html'
